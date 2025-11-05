@@ -6,7 +6,7 @@ A comprehensive web-based Worker Management and Tracking System for simplifying 
 
 - **Frontend**: Next.js 14 + React + TypeScript
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: MongoDB (with Mongoose)
+- **Database**: PostgreSQL
 - **Authentication**: JWT + bcrypt
 - **File Storage**: Local filesystem (configurable for AWS S3/Cloudflare R2)
 
@@ -40,7 +40,7 @@ Worker_management/
 
 ### Prerequisites
 - Node.js 18+ 
-- MongoDB database
+- PostgreSQL database
 - npm or yarn
 
 ### Installation
@@ -58,7 +58,9 @@ npm install
 
 2. Set up environment variables:
 - Copy `.env.example` to `.env` in both frontend and backend folders
-- Configure MongoDB connection string and JWT secret
+- Configure PostgreSQL connection string and JWT secret
+- Run database schema: `psql worker_management < backend/src/db/schema.sql`
+- Create admin user: `cd backend && npm run init-admin`
 
 3. Run development servers:
 ```bash
