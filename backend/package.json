@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
-    "init-admin": "tsx src/scripts/initAdmin.ts"
+    "init-admin": "tsx src/scripts/initAdmin.ts",
+    "create-admin": "tsx src/scripts/createAdmin.ts"
   },
   "keywords": ["worker-management", "api"],
   "author": "",
