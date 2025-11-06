@@ -30,7 +30,16 @@ export default function AdminLogin() {
       Cookies.set('token', response.data.token, { expires: 7 });
       router.push('/admin/dashboard');
     } catch (error: any) {
-      setError(error.response?.data?.error || 'Login failed');
+      console.error('Login error:', error);
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        setError('Cannot connect to backend server. Please ensure the backend is deployed and NEXT_PUBLIC_API_URL is set correctly.');
+      } else if (error.response?.status === 401) {
+        setError('Invalid username or password');
+      } else if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else {
+        setError('Login failed. Please check your backend connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
