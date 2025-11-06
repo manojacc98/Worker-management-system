@@ -3,44 +3,61 @@
  * Run with: tsx src/scripts/seedData.ts
  */
 
-import pool from '../db/connection';
-import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Create a pool with longer timeout for external connections
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('render.com') ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 10000, // 10 seconds for external connections
+  idleTimeoutMillis: 30000,
+});
 
 async function seedData() {
   try {
     console.log('🌱 Seeding database with dummy data...\n');
 
-    // Create workers
-    console.log('Creating workers...');
-    const workers = await Promise.all([
-      pool.query(
-        `INSERT INTO workers (name, photo, hourly_rate, start_time, end_time)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        ['John Smith', '', 25.00, '09:00', '18:00']
-      ),
-      pool.query(
-        `INSERT INTO workers (name, photo, hourly_rate, start_time, end_time)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        ['Sarah Johnson', '', 30.00, '08:00', '17:00']
-      ),
-      pool.query(
-        `INSERT INTO workers (name, photo, hourly_rate, start_time, end_time)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        ['Mike Davis', '', 22.50, '10:00', '19:00']
-      ),
-      pool.query(
-        `INSERT INTO workers (name, photo, hourly_rate, start_time, end_time)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        ['Emily Brown', '', 28.00, '09:30', '18:30']
-      ),
-      pool.query(
-        `INSERT INTO workers (name, photo, hourly_rate, start_time, end_time)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        ['David Wilson', '', 27.00, '08:30', '17:30']
-      ),
-    ]);
+    // Test connection first
+    await pool.query('SELECT NOW()');
+    console.log('✅ Connected to database\n');
 
-    const workerIds = workers.map((w) => w.rows[0].id);
+    // Create workers sequentially to avoid connection issues
+    console.log('Creating workers...');
+    const workerData = [
+      ['John Smith', '', 25.00, '09:00', '18:00'],
+      ['Sarah Johnson', '', 30.00, '08:00', '17:00'],
+      ['Mike Davis', '', 22.50, '10:00', '19:00'],
+      ['Emily Brown', '', 28.00, '09:30', '18:30'],
+      ['David Wilson', '', 27.00, '08:30', '17:30'],
+    ];
+
+    const workerIds = [];
+    for (const [name, photo, hourlyRate, startTime, endTime] of workerData) {
+      try {
+        const result = await pool.query(
+          `INSERT INTO workers (name, photo, hourly_rate, start_time, end_time)
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [name, photo, hourlyRate, startTime, endTime]
+        );
+        workerIds.push(result.rows[0].id);
+        console.log(`  ✅ Created worker: ${name}`);
+      } catch (error: any) {
+        if (error.code === '23505') {
+          // Duplicate key - worker already exists, get existing ID
+          const existing = await pool.query('SELECT id FROM workers WHERE name = $1', [name]);
+          if (existing.rows[0]) {
+            workerIds.push(existing.rows[0].id);
+            console.log(`  ⚠️  Worker already exists: ${name}`);
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
+
     console.log(`✅ Created ${workerIds.length} workers\n`);
 
     // Create updates for the last 7 days
@@ -48,37 +65,43 @@ async function seedData() {
     const updates = [];
     const today = new Date();
     
+    const comments = [
+      'Completed all assigned tasks for the day. Worked on main project deliverables.',
+      'Finished installation work at the site. All materials organized and stored properly.',
+      'Completed daily maintenance tasks. Equipment checked and serviced.',
+      'Worked on construction phase. Progress is on schedule.',
+      'Completed painting and finishing work. Quality check passed.',
+      'Finished plumbing installation. All connections tested and verified.',
+      'Completed electrical work. Safety checks performed.',
+    ];
+
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
 
-      // Create updates for each worker
+      // Create updates for each worker sequentially
       for (const workerId of workerIds) {
-        const comments = [
-          'Completed all assigned tasks for the day. Worked on main project deliverables.',
-          'Finished installation work at the site. All materials organized and stored properly.',
-          'Completed daily maintenance tasks. Equipment checked and serviced.',
-          'Worked on construction phase. Progress is on schedule.',
-          'Completed painting and finishing work. Quality check passed.',
-          'Finished plumbing installation. All connections tested and verified.',
-          'Completed electrical work. Safety checks performed.',
-        ];
-
-        const hasPending = i === 0 && Math.random() > 0.7; // Some recent updates have pending work
-
-        await pool.query(
-          `INSERT INTO updates (worker_id, comment, images, has_pending_work, date)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [
-            workerId,
-            comments[Math.floor(Math.random() * comments.length)],
-            [],
-            hasPending,
-            dateStr,
-          ]
-        );
-        updates.push({ workerId, date: dateStr });
+        try {
+          const hasPending = i === 0 && Math.random() > 0.7; // Some recent updates have pending work
+          
+          await pool.query(
+            `INSERT INTO updates (worker_id, comment, images, has_pending_work, date)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              workerId,
+              comments[Math.floor(Math.random() * comments.length)],
+              [],
+              hasPending,
+              dateStr,
+            ]
+          );
+          updates.push({ workerId, date: dateStr });
+        } catch (error: any) {
+          if (error.code !== '23505') { // Ignore duplicates
+            console.error(`  ⚠️  Error creating update for worker ${workerId}:`, error.message);
+          }
+        }
       }
     }
     console.log(`✅ Created ${updates.length} updates\n`);
