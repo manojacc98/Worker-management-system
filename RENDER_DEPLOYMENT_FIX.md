@@ -23,6 +23,8 @@ This happens because:
 npm install && npm run build
 ```
 
+**Note:** TypeScript and type definitions are now in `dependencies` (not `devDependencies`) to ensure they're available during the build process.
+
 **Start Command:** 
 ```
 npm start

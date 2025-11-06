@@ -1,0 +1,1 @@
+{"version":3,"file":"admins.d.ts","sourceRoot":"","sources":["../../../src/db/queries/admins.ts"],"names":[],"mappings":"AAGA,eAAO,MAAM,YAAY;+BACU,MAAM;mBAKlB,MAAM;uBAKF,MAAM,YAAY,MAAM;yBAStB,MAAM,eAAe,MAAM;qCASf,MAAM,kBAAkB,MAAM,KAAG,OAAO,CAAC,OAAO,CAAC;CAGzF,CAAC"}
