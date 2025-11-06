@@ -7,6 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "postinstall": "npm run build",
     "type-check": "tsc --noEmit",
     "init-admin": "tsx src/scripts/initAdmin.ts",
     "create-admin": "tsx src/scripts/createAdmin.ts"
