@@ -45,6 +45,9 @@ export default function AdminLogin() {
     }
   };
 
+  // Debug: Show API URL in development
+  const apiUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000') : '';
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -55,11 +58,21 @@ export default function AdminLogin() {
           <p className="mt-2 text-center text-sm text-gray-600">
             Enter your credentials to access the admin panel
           </p>
+          {process.env.NODE_ENV === 'development' && apiUrl && (
+            <p className="mt-2 text-center text-xs text-gray-400">
+              API URL: {apiUrl}
+            </p>
+          )}
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-2 text-xs">
+                  API URL: {apiUrl || 'Not set'}
+                </div>
+              )}
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">
